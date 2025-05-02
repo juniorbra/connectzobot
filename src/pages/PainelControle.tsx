@@ -4,17 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import MinhaContaPanel from '../components/MinhaContaPanel';
 
-interface Agent {
+interface Workflow {
   id: string;
   name: string;
   description: string;
   active: boolean;
-  type: string;
   user_id: string;
 }
 
 const PainelControle: React.FC = () => {
-  const [agents, setAgents] = useState<Agent[]>([]);
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -26,51 +25,51 @@ const PainelControle: React.FC = () => {
       return;
     }
 
-    fetchAgents();
+    fetchWorkflows();
   }, [user, navigate]);
 
-  const fetchAgents = async () => {
+  const fetchWorkflows = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('agents')
-        .select('*')
+        .from('workflows')
+        .select('id, name, description, active, user_id')
         .eq('user_id', user?.id);
 
       if (error) throw error;
       
       if (data) {
-        setAgents(data);
+        setWorkflows(data);
       }
     } catch (error) {
-      console.error('Error fetching agents:', error);
+      console.error('Error fetching workflows:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateAgent = () => {
+  const handleCreateWorkflow = () => {
     navigate('/configurar-agente/new');
   };
 
-  const handleConfigureAgent = (id: string) => {
+  const handleConfigureWorkflow = (id: string) => {
     navigate(`/configurar-agente/${id}`);
   };
 
-  const handleDeleteAgent = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este agente?')) {
+  const handleDeleteWorkflow = async (id: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este conector?')) {
       try {
         const { error } = await supabase
-          .from('agents')
+          .from('workflows')
           .delete()
           .eq('id', id);
 
         if (error) throw error;
         
-        // Refresh the agents list
-        fetchAgents();
+        // Refresh the workflows list
+        fetchWorkflows();
       } catch (error) {
-        console.error('Error deleting agent:', error);
+        console.error('Error deleting workflow:', error);
       }
     }
   };
@@ -135,7 +134,7 @@ const PainelControle: React.FC = () => {
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            Agentes IA
+            Conectores
           </button>
           <button
             onClick={() => setActiveView('account')}
@@ -152,15 +151,15 @@ const PainelControle: React.FC = () => {
         {activeView === 'agents' ? (
           <>
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-bold">Agentes IA</h2>
+              <h2 className="text-2xl font-bold">Conectores</h2>
               <button 
-                onClick={handleCreateAgent}
+                onClick={handleCreateWorkflow}
                 className="bg-[#3b82f6] hover:bg-[#2563eb] text-white px-4 py-2 rounded-full flex items-center"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Criar Novo Agente
+                Criar Novo Conector
               </button>
             </div>
 
@@ -170,13 +169,13 @@ const PainelControle: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {agents.length === 0 ? (
+                {workflows.length === 0 ? (
                   <div className="col-span-full text-center py-12 bg-[#131825] rounded-lg">
-                    <p className="text-gray-400">Nenhum agente encontrado. Crie seu primeiro agente!</p>
+                    <p className="text-gray-400">Nenhum conector encontrado. Crie seu primeiro conector!</p>
                   </div>
                 ) : (
-                  agents.map((agent) => (
-                    <div key={agent.id} className="bg-[#131825] rounded-lg p-6 flex flex-col">
+                  workflows.map((workflow) => (
+                    <div key={workflow.id} className="bg-[#131825] rounded-lg p-6 flex flex-col">
                       <div className="flex items-start mb-4">
                         <div className="bg-[#3b82f6] p-3 rounded-full mr-3">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -185,22 +184,17 @@ const PainelControle: React.FC = () => {
                         </div>
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
-                            <h3 className="text-xl font-semibold">{agent.name}</h3>
-                            <span className={`px-2 py-1 text-xs rounded ${agent.active ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-300'}`}>
-                              {agent.active ? 'Ativo' : 'Inativo'}
+                            <h3 className="text-xl font-semibold">{workflow.name}</h3>
+                            <span className={`px-2 py-1 text-xs rounded ${workflow.active ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-300'}`}>
+                              {workflow.active ? 'Ativo' : 'Inativo'}
                             </span>
                           </div>
-                          <p className="text-gray-400 mt-1">{agent.description}</p>
+                          <p className="text-gray-400 mt-1">{workflow.description}</p>
                         </div>
                       </div>
-                      
-                      <div className="mt-2 mb-6">
-                        <span className="bg-[#3b82f6] text-xs px-3 py-1 rounded-full">{agent.type}</span>
-                      </div>
-                      
                       <div className="mt-auto pt-4 border-t border-[#2a3042] flex justify-between">
                         <button 
-                          onClick={() => handleConfigureAgent(agent.id)}
+                          onClick={() => handleConfigureWorkflow(workflow.id)}
                           className="flex items-center text-gray-300 hover:text-white"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -210,7 +204,7 @@ const PainelControle: React.FC = () => {
                           Configurar
                         </button>
                         <button 
-                          onClick={() => handleDeleteAgent(agent.id)}
+                          onClick={() => handleDeleteWorkflow(workflow.id)}
                           className="flex items-center text-red-400 hover:text-red-300"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">

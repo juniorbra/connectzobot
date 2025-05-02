@@ -286,63 +286,63 @@ const [form, setForm] = useState<AgentForm>({
     try {
       setLoading(true);
       
-      // Fetch agent data
-      const { data: agentData, error: agentError } = await supabase
-        .from('agents')
+      // Fetch workflow data
+      const { data: workflowData, error: workflowError } = await supabase
+        .from('workflows')
         .select('*')
         .eq('id', id)
         .eq('user_id', user?.id)
         .single();
 
-      if (agentError) throw agentError;
+      if (workflowError) throw workflowError;
       
-      // Fetch QA pair data for this agent
+      // Fetch QA pair data for this workflow
       const { data: qaData, error: qaError } = await supabase
         .from('qa_pairs')
         .select('question, answer')
-        .eq('agent_id', id)
+        .eq('workflow_id', id)
         .eq('user_id', user?.id)
         .maybeSingle();
         
       if (qaError) {
         console.error('Error fetching QA pair:', qaError);
-        // Continue anyway, as we have the agent data
+        // Continue anyway, as we have the workflow data
       }
       
-      if (agentData) {
+      if (workflowData) {
         setForm({
-          name: agentData.name || '',
-          description: agentData.description || '',
-          active: agentData.active || false,
+          name: workflowData.name || '',
+          description: workflowData.description || '',
+          active: workflowData.active || false,
           // Força o tipo para "OPENAI" (case-sensitive)
           type: 'OPENAI',
           // Garante que o modelo padrão seja um dos dois permitidos
-          model: ['gpt-4.1-mini', 'gpt-4o-mini'].includes(agentData.model)
-            ? agentData.model
+          model: ['gpt-4.1-mini', 'gpt-4o-mini'].includes(workflowData.model)
+            ? workflowData.model
             : 'gpt-4.1-mini',
-          prompt: agentData.prompt || '',
-          webhook_url: agentData.webhook_url || '',
-          // Use QA data if available, otherwise use agent data
+          prompt: workflowData.prompt || '',
+          webhook_url: workflowData.webhook_url || '',
+          // Use QA data if available, otherwise use workflow data
           question: qaData?.question || '',
-          response_template: qaData?.answer || agentData.response_template || '',
-          advanced_settings: agentData.advanced_settings || {
+          response_template: qaData?.answer || workflowData.response_template || '',
+          advanced_settings: workflowData.advanced_settings || {
             temperature: 0.7,
             max_tokens: 2000
           },
           // Novos campos de configurações adicionais
-          stop_bot_on_message: agentData.stop_bot_on_message ?? true,
-          pause_window_minutes: agentData.pause_window_minutes ?? 15,
-          split_long_messages: agentData.split_long_messages ?? true,
-          show_typing_indicator: agentData.show_typing_indicator ?? true,
-          typing_delay_per_char_ms: agentData.typing_delay_per_char_ms ?? 50,
-          concat_messages: agentData.concat_messages ?? true,
-          concat_time_seconds: agentData.concat_time_seconds ?? 7,
-          context_window_size: agentData.context_window_size ?? 5
+          stop_bot_on_message: workflowData.stop_bot_on_message ?? true,
+          pause_window_minutes: workflowData.pause_window_minutes ?? 15,
+          split_long_messages: workflowData.split_long_messages ?? true,
+          show_typing_indicator: workflowData.show_typing_indicator ?? true,
+          typing_delay_per_char_ms: workflowData.typing_delay_per_char_ms ?? 50,
+          concat_messages: workflowData.concat_messages ?? true,
+          concat_time_seconds: workflowData.concat_time_seconds ?? 7,
+          context_window_size: workflowData.context_window_size ?? 5
         });
       }
     } catch (error) {
-      console.error('Error fetching agent:', error);
-      setError('Não foi possível carregar os dados do agente.');
+      console.error('Error fetching workflow:', error);
+      setError('Não foi possível carregar os dados do workflow.');
     } finally {
       setLoading(false);
     }
@@ -404,22 +404,16 @@ const [form, setForm] = useState<AgentForm>({
     try {
       setSaving(true);
 
-      // Se for novo agente, insere e redireciona para edição com o novo id
+      // Se for novo workflow, insere e redireciona para edição com o novo id
       if (isNewAgent) {
-        // Insert the agent first
-        const { data: agentData, error: agentError } = await supabase
-          .from('agents')
+        // Insert the workflow first
+        const { data: workflowData, error: workflowError } = await supabase
+          .from('workflows')
           .insert([
             {
               name: form.name,
               description: form.description,
               active: form.active,
-              type: form.type,
-              prompt: form.prompt,
-              model: form.model,
-              webhook_url: form.webhook_url,
-              response_template: form.response_template,
-              advanced_settings: form.advanced_settings,
               user_id: user?.id,
               // Adiciona todos os campos adicionais
               stop_bot_on_message: form.stop_bot_on_message,
@@ -428,47 +422,46 @@ const [form, setForm] = useState<AgentForm>({
               show_typing_indicator: form.show_typing_indicator,
               typing_delay_per_char_ms: form.typing_delay_per_char_ms,
               concat_messages: form.concat_messages,
-              concat_time_seconds: form.concat_time_seconds,
-              context_window_size: form.context_window_size
+              concat_time_seconds: form.concat_time_seconds
             }
           ])
           .select()
           .single();
 
-        if (agentError) throw agentError;
+        if (workflowError) throw workflowError;
 
         // If question and answer are provided, insert them into qa_pairs
-        if (form.question && form.response_template && agentData.id) {
+        if (form.question && form.response_template && workflowData.id) {
           const { error: qaError } = await supabase
             .from('qa_pairs')
             .insert([
               {
                 question: form.question,
                 answer: form.response_template,
-                agent_id: agentData.id,
+                workflow_id: workflowData.id,
                 user_id: user?.id
               }
             ]);
 
           if (qaError) {
             console.error('Error saving QA pair:', qaError);
-            // Continue anyway, as the agent was created successfully
+            // Continue anyway, as the workflow was created successfully
           }
         }
 
         // Atualiza ou insere wa_connections
-        if (agentData && agentData.id && connectionName && phoneNumber) {
+        if (workflowData && workflowData.id && connectionName && phoneNumber) {
           const { data: existingConn } = await supabase
             .from('wa_connections')
             .select('id')
-            .eq('agent_id', agentData.id)
+            .eq('workflow_id', workflowData.id)
             .eq('user_id', user?.id)
             .maybeSingle();
 
           const waPayload = {
             instance_name: connectionName,
             numero_wa: phoneNumber,
-            agent_id: agentData.id,
+            workflow_id: workflowData.id,
             user_id: user?.id
           };
 
@@ -485,29 +478,23 @@ const [form, setForm] = useState<AgentForm>({
           }
         }
 
-        setSuccess('Agente criado com sucesso!');
-        // Redireciona para a edição do novo agente para evitar id=undefined em updates
+        setSuccess('Workflow criado com sucesso!');
+        // Redireciona para a edição do novo workflow para evitar id=undefined em updates
         setTimeout(() => {
-          if (agentData && agentData.id) {
-            navigate(`/configurar-agente/${agentData.id}`);
+          if (workflowData && workflowData.id) {
+            navigate(`/configurar-agente/${workflowData.id}`);
           } else {
             navigate('/');
           }
         }, 1000);
       } else if (id && id !== 'new') {
-        // Update existing agent
-        const { error: agentError } = await supabase
-          .from('agents')
+        // Update existing workflow
+        const { error: workflowError } = await supabase
+          .from('workflows')
           .update({
             name: form.name,
             description: form.description,
             active: form.active,
-            type: form.type,
-            prompt: form.prompt,
-            model: form.model,
-            webhook_url: form.webhook_url,
-            response_template: form.response_template,
-            advanced_settings: form.advanced_settings,
             // Adiciona todos os campos adicionais
             stop_bot_on_message: form.stop_bot_on_message,
             pause_window_minutes: form.pause_window_minutes,
@@ -515,19 +502,18 @@ const [form, setForm] = useState<AgentForm>({
             show_typing_indicator: form.show_typing_indicator,
             typing_delay_per_char_ms: form.typing_delay_per_char_ms,
             concat_messages: form.concat_messages,
-            concat_time_seconds: form.concat_time_seconds,
-            context_window_size: form.context_window_size
+            concat_time_seconds: form.concat_time_seconds
           })
           .eq('id', id)
           .eq('user_id', user?.id);
 
-        if (agentError) throw agentError;
+        if (workflowError) throw workflowError;
 
-        // Check if there's an existing QA pair for this agent
+        // Check if there's an existing QA pair for this workflow
         const { data: existingQA, error: qaFetchError } = await supabase
           .from('qa_pairs')
           .select('id')
-          .eq('agent_id', id)
+          .eq('workflow_id', id)
           .eq('user_id', user?.id)
           .maybeSingle();
 
@@ -559,7 +545,7 @@ const [form, setForm] = useState<AgentForm>({
                 {
                   question: form.question,
                   answer: form.response_template,
-                  agent_id: id,
+                  workflow_id: id,
                   user_id: user?.id
                 }
               ]);
@@ -575,14 +561,14 @@ const [form, setForm] = useState<AgentForm>({
           const { data: existingConn } = await supabase
             .from('wa_connections')
             .select('id')
-            .eq('agent_id', id)
+            .eq('workflow_id', id)
             .eq('user_id', user?.id)
             .maybeSingle();
 
           const waPayload = {
             instance_name: connectionName,
             numero_wa: phoneNumber,
-            agent_id: id,
+            workflow_id: id,
             user_id: user?.id
           };
 
@@ -599,7 +585,7 @@ const [form, setForm] = useState<AgentForm>({
           }
         }
 
-        setSuccess('Agente atualizado com sucesso!');
+        setSuccess('Workflow atualizado com sucesso!');
         setTimeout(() => {
           navigate('/');
         }, 1000);
@@ -612,11 +598,10 @@ const [form, setForm] = useState<AgentForm>({
     }
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
+    await handleSubmit();
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
-    } else {
-      handleSubmit();
     }
   };
 
@@ -646,14 +631,34 @@ const [form, setForm] = useState<AgentForm>({
               description: form.description,
               active: form.active
             };
+            // Envia para o webhook externo (mantém se necessário)
             await fetch('https://webhooks.botvance.com.br/webhook/41869a3e-8f88-45da-82a5-zobotapp', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
             });
-            setSuccess('Dados enviados para o webhook com sucesso!');
+
+            // Envia para a tabela public.workflows no Supabase
+            if (form.name && form.description && user?.id) {
+              const { error: workflowError } = await supabase
+                .from('workflows')
+                .insert([
+                  {
+                    name: form.name,
+                    description: form.description,
+                    active: form.active,
+                    user_id: user.id
+                  }
+                ]);
+              if (workflowError) {
+                setError('Erro ao salvar workflow no banco de dados.');
+                return;
+              }
+            }
+
+            setSuccess('Dados enviados para o webhook e workflow salvo no banco de dados com sucesso!');
           } catch (err) {
-            setError('Erro ao enviar dados para o webhook.');
+            setError('Erro ao enviar dados para o webhook ou salvar workflow.');
           }
         };
 
@@ -661,7 +666,7 @@ const [form, setForm] = useState<AgentForm>({
           <div>
             <h3 className="text-xl font-semibold mb-4">Informações Básicas</h3>
             <div className="mb-6">
-              <label className="block text-gray-300 mb-2">Nome do Agente</label>
+              <label className="block text-gray-300 mb-2">Nome do workflow do n8n</label>
               <input
                 type="text"
                 name="name"
@@ -679,7 +684,7 @@ const [form, setForm] = useState<AgentForm>({
                 value={form.description}
                 onChange={handleChange}
                 className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-24"
-                placeholder="Descreva o propósito deste agente..."
+                placeholder="Descreva o propósito deste workflow..."
               ></textarea>
             </div>
             
@@ -719,70 +724,75 @@ const [form, setForm] = useState<AgentForm>({
           <div>
             <div className="flex mb-6 border-b border-[#2a3042]">
               <button
-                onClick={() => setIaTab('config')}
-                className={`px-6 py-3 font-medium ${
-                  iaTab === 'config'
-                    ? 'text-[#3b82f6] border-b-2 border-[#3b82f6]'
-                    : 'text-gray-400 hover:text-white'
-                }`}
+                className="px-6 py-3 font-medium text-[#3b82f6] border-b-2 border-[#3b82f6]"
+                style={{ cursor: 'default' }}
               >
-                Configuração IA
-              </button>
-              <button
-                onClick={() => setIaTab('assistant')}
-                className={`px-6 py-3 font-medium ${
-                  iaTab === 'assistant'
-                    ? 'text-[#3b82f6] border-b-2 border-[#3b82f6]'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                Assistente de Prompt
+                Configuração da Evolution API
               </button>
             </div>
-            {iaTab === 'config' ? (
-              <>
-                <h3 className="text-xl font-semibold mb-4">Configurar IA</h3>
-                <div className="mb-6">
-                  <label className="block text-gray-300 mb-2">Tipo</label>
-                  <select
-                    name="type"
-                    value={form.type}
-                    onChange={handleChange}
-                    className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="OPENAI">OpenAI</option>
-                  </select>
+            <h3 className="text-xl font-semibold mb-4">Copie a URL do Webhook e cole na sua Evolution API</h3>
+            {id && id !== 'new' && (
+                <div>
+                  <div className="mb-6 relative">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`https://webhooks.botvance.com.br/webhook/conector?${id}`);
+                      }}
+                      className="absolute -top-6 right-0 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-xs px-3 py-1 rounded-t-md z-10"
+                      title="Copiar URL"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      COPIAR
+                    </button>
+                    <div
+                      className="bg-[#232a3b] text-[#3b82f6] px-4 py-2 rounded font-mono text-sm select-all w-full"
+                      style={{ wordBreak: 'break-all' }}
+                    >
+                      {`https://webhooks.botvance.com.br/webhook/conector?${id}`}
+                    </div>
+                  </div>
+                  <div className="bg-[#232a3b] border border-[#374151] rounded-lg p-5 mb-6">
+                    <div className="flex items-center mb-2">
+                      <span className="text-xl mr-2">🔧</span>
+                      <span className="font-bold text-lg text-white">Como configurar a Evolution API</span>
+                    </div>
+                    <ol className="list-decimal list-inside text-gray-300 space-y-1 pl-2">
+                      <li><b>Adicionar nova instância</b>
+                        <ul className="list-disc list-inside ml-5">
+                          <li>Clique em <b>Instance+</b></li>
+                          <li>Escolha um nome para a instância (evite espaços)</li>
+                          <li>No campo <b>Canal</b>, selecione <b>Baileys</b></li>
+                          <li>Mantenha o Token gerado automaticamente</li>
+                          <li>Digite o número de telefone no formato: <b>DDI + DDD + número</b> (ex: 5521999999999)</li>
+                          <li>Clique em <b>Get QR Code</b> para gerar o QR Code de conexão</li>
+                        </ul>
+                      </li>
+                      <li><b>Conectar o WhatsApp</b>
+                        <ul className="list-disc list-inside ml-5">
+                          <li>No seu celular, abra o WhatsApp</li>
+                          <li>Toque nos três pontinhos no topo e selecione <b>Dispositivos conectados</b></li>
+                          <li>Toque em <b>Conectar dispositivo</b> e escaneie o QR Code exibido na tela</li>
+                        </ul>
+                      </li>
+                      <li><b>Ajustar configurações</b>
+                        <ul className="list-disc list-inside ml-5">
+                          <li>Após conectar, acesse o menu <b>Settings</b></li>
+                          <li>Ative a opção <b>Ignore Groups</b> e clique em Salvar</li>
+                        </ul>
+                      </li>
+                      <li><b>Ativar Webhook</b>
+                          <ul className="list-disc list-inside ml-5">
+                            <li>Vá até o menu <b>Events</b> &gt; <b>Webhook</b></li>
+                            <li>Ative a opção <b>Enabled</b></li>
+                          <li>No campo URL, cole o link de webhook fornecido pela sua aplicação</li>
+                          <li>Ative a opção <b>Webhook Base64</b></li>
+                          <li>Ative também o evento <b>MESSAGES_UPSERT</b></li>
+                          <li>Clique em Salvar para finalizar</li>
+                        </ul>
+                      </li>
+                    </ol>
+                  </div>
                 </div>
-                
-                <div className="mb-6">
-                  <label className="block text-gray-300 mb-2">Modelo</label>
-                  <select
-                    name="model"
-                    value={form.model}
-                    onChange={handleChange}
-                    className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {availableModels[form.type]?.map((model) => (
-                      <option key={model} value={model}>
-                        {model}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="mb-6">
-                  <label className="block text-gray-300 mb-2">Prompt do Sistema</label>
-                  <textarea
-                    name="prompt"
-                    value={form.prompt}
-                    onChange={handleChange}
-                    className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-48 font-mono"
-                    placeholder="Insira o prompt do sistema para o agente..."
-                  ></textarea>
-                </div>
-              </>
-            ) : (
-              <PromptAssistant />
             )}
           </div>
         );
@@ -1211,7 +1221,7 @@ const [form, setForm] = useState<AgentForm>({
               </div>
               <div>
                 <h3 className="font-semibold">Informações Básicas</h3>
-                <p className="text-sm text-gray-300">Configure o nome, descrição e aparência do seu agente</p>
+                <p className="text-sm text-gray-300">Configure o nome e a descrição do seu workflow</p>
               </div>
             </div>
             {/* Step 2 */}
@@ -1227,8 +1237,8 @@ const [form, setForm] = useState<AgentForm>({
                 <span className="font-bold">2</span>
               </div>
               <div>
-                <h3 className="font-semibold">Configurar IA</h3>
-                <p className="text-sm text-gray-300">Configure a ferramenta de Inteligência Artificial</p>
+                <h3 className="font-semibold">Configurar Evolution API</h3>
+                <p className="text-sm text-gray-300">Configure o campo Webhook da Evolution API</p>
               </div>
             </div>
             {/* Step 3 */}
