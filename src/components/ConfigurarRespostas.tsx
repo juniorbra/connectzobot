@@ -28,13 +28,62 @@ const ConfigurarRespostas: React.FC<ConfigurarRespostasProps> = ({
   const [qaPairs, setQaPairs] = useState<Array<{id: string, question: string, answer: string}>>([]);
   const [editingPairId, setEditingPairId] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [apiKey, setApiKey] = useState<string>('');
   
-  // Fetch QA pairs when the component mounts
+  // Fetch QA pairs and API key when the component mounts
   useEffect(() => {
     if (id && id !== 'new') {
       fetchQAPairs();
+      fetchApiKey();
     }
   }, [id]);
+  
+  // Function to fetch the OpenAI API key
+  const fetchApiKey = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('workflows')
+        .select('api_openai')
+        .eq('id', id)
+        .eq('user_id', user?.id)
+        .single();
+        
+      if (error) {
+        console.error('Error fetching API key:', error);
+        return;
+      }
+      
+      if (data && data.api_openai) {
+        setApiKey(data.api_openai);
+      }
+    } catch (error) {
+      console.error('Error in fetchApiKey:', error);
+    }
+  };
+  
+  // Function to update the OpenAI API key
+  const updateApiKey = async () => {
+    try {
+      const { error } = await supabase
+        .from('workflows')
+        .update({
+          api_openai: apiKey
+        })
+        .eq('id', id)
+        .eq('user_id', user?.id);
+        
+      if (error) {
+        console.error('Error updating API key:', error);
+        setError('Erro ao atualizar a chave API da OpenAI.');
+        return;
+      }
+      
+      setSuccess('Chave API da OpenAI atualizada com sucesso!');
+    } catch (error) {
+      console.error('Error in updateApiKey:', error);
+      setError('Erro ao atualizar a chave API da OpenAI.');
+    }
+  };
   
   // Function to fetch QA pairs for this agent
   const fetchQAPairs = async () => {
@@ -246,7 +295,7 @@ const ConfigurarRespostas: React.FC<ConfigurarRespostasProps> = ({
   
   return (
     <div>
-      <h3 className="text-xl font-semibold mb-4">Configurar Respostas</h3>
+      <h3 className="text-xl font-semibold mb-4">Configurar OpenAI</h3>
 
       {/* Form for adding/editing QA pairs */}
       {(isAddingNew || editingPairId) && (
@@ -298,31 +347,39 @@ const ConfigurarRespostas: React.FC<ConfigurarRespostasProps> = ({
 
       {/* List of QA pairs */}
       <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h4 className="text-lg font-medium">Pares de Perguntas e Respostas</h4>
-          <button
-            type="button"
-            onClick={() => {
-              // Set state for adding new QA pair
-              setIsAddingNew(true);
-              setEditingPairId(null);
-              setForm({
-                ...form,
-                question: '',
-                response_template: ''
-              });
-            }}
-            className="px-4 py-2 bg-[#3b82f6] hover:bg-[#2563eb] rounded-md text-white"
-          >
-            Adicionar Novo
-          </button>
+        <div className="mb-4">
+          <h4 className="text-lg font-medium mb-2">Insira a sua chave API da OpenAI</h4>
+          <div className="flex space-x-2">
+            <input
+              type="text"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              className="flex-grow bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="sk-..."
+            />
+            <button
+              type="button"
+              onClick={updateApiKey}
+              className="px-4 py-2 bg-[#3b82f6] hover:bg-[#2563eb] rounded-md text-white"
+            >
+              Salvar
+            </button>
+          </div>
+          
+          <div className="bg-[#1e2738] p-4 rounded-lg mt-4">
+            <p className="text-white font-medium mb-2">🔐 Como gerar uma chave de API na OpenAI</p>
+            <ol className="list-decimal pl-5 text-gray-300 space-y-1">
+              <li>Acesse o site: <a href="https://platform.openai.com/account/api-keys" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">https://platform.openai.com/account/api-keys</a></li>
+              <li>Faça login com sua conta OpenAI (ou crie uma, se ainda não tiver).</li>
+              <li>Na seção "API Keys", clique no botão "Create new secret key".</li>
+              <li>Dê um nome para identificar essa chave (ex: "Integração com WhatsApp").</li>
+              <li>Clique em "Create secret key".</li>
+              <li>Copie a chave exibida na tela — ela só aparecerá uma vez!</li>
+              <li>Guarde essa chave em local seguro (como um gerenciador de senhas ou variável de ambiente no seu sistema).</li>
+            </ol>
+          </div>
         </div>
 
-        {qaPairs.length === 0 && !isAddingNew && !editingPairId && (
-          <div className="bg-[#1e2738] p-4 rounded-lg mb-4 text-center">
-            <p className="text-gray-400">Nenhum par de pergunta e resposta cadastrado.</p>
-          </div>
-        )}
 
         {qaPairs.map(pair => (
           <div key={pair.id} className="bg-[#1e2738] p-4 rounded-lg mb-4">

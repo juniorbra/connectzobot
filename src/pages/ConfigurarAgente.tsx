@@ -736,7 +736,7 @@ const [form, setForm] = useState<AgentForm>({
                   <div className="mb-6 relative">
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(`https://webhooks.botvance.com.br/webhook/conector?${id}`);
+                        navigator.clipboard.writeText(`https://webhooks.botvance.com.br/webhook/conector?q=${id}`);
                       }}
                       className="absolute -top-6 right-0 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-xs px-3 py-1 rounded-t-md z-10"
                       title="Copiar URL"
@@ -748,7 +748,7 @@ const [form, setForm] = useState<AgentForm>({
                       className="bg-[#232a3b] text-[#3b82f6] px-4 py-2 rounded font-mono text-sm select-all w-full"
                       style={{ wordBreak: 'break-all' }}
                     >
-                      {`https://webhooks.botvance.com.br/webhook/conector?${id}`}
+                      {`https://webhooks.botvance.com.br/webhook/conector?q=${id}`}
                     </div>
                   </div>
                   <div className="bg-[#232a3b] border border-[#374151] rounded-lg p-5 mb-6">
@@ -1254,8 +1254,8 @@ const [form, setForm] = useState<AgentForm>({
                 <span className="font-bold">3</span>
               </div>
               <div>
-                <h3 className="font-semibold">Configurar Respostas</h3>
-                <p className="text-sm text-gray-300">Configure como seu agente responderá às mensagens</p>
+                <h3 className="font-semibold">Configurar OpenAI</h3>
+                <p className="text-sm text-gray-300">Insira sua chave API da OpenAI para transcrever os audios e imagens</p>
               </div>
             </div>
             {/* Step 4 */}
