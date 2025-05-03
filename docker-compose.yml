@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  zobot-app:
+  conectabotvance:
     image: hvidigaljr/conectabotvance:latest
     build:
       context: .
@@ -16,12 +16,12 @@ services:
           - node.role == manager
       labels:
         - traefik.enable=true
-        - traefik.http.routers.zobot-app.rule=Host(`app.botvance.com.br`)
-        - traefik.http.routers.zobot-app.entrypoints=websecure
-        - traefik.http.routers.zobot-app.tls.certresolver=letsencryptresolver
-        - traefik.http.services.zobot-app.loadbalancer.server.port=80
-        - traefik.http.services.zobot-app.loadbalancer.passHostHeader=true
-        - traefik.http.routers.zobot-app.service=zobot-app
+        - traefik.http.routers.conectabotvance.rule=Host(`app.botvance.com.br`)
+        - traefik.http.routers.conectabotvance.entrypoints=websecure
+        - traefik.http.routers.conectabotvance.tls.certresolver=letsencryptresolver
+        - traefik.http.services.conectabotvance.loadbalancer.server.port=80
+        - traefik.http.services.conectabotvance.loadbalancer.passHostHeader=true
+        - traefik.http.routers.conectabotvance.service=conectabotvance
     environment:
       - VITE_SUPABASE_URL=https://oovwvznxynyzqwjkvoxn.supabase.co
       - VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vdnd2em54eW55enF3amt2b3huIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU4Nzk3MjUsImV4cCI6MjA2MTQ1NTcyNX0.wBtJm5I8-TUyTbcWsx0tG4IDIsnmzyV_afKMNCm-oVM
