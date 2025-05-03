@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   zobot-app:
-    image: hvidigaljr/zobot-app:latest
+    image: hvidigaljr/conectabotvance:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -16,7 +16,7 @@ services:
           - node.role == manager
       labels:
         - traefik.enable=true
-        - traefik.http.routers.zobot-app.rule=Host(`meu.zobot.top`)
+        - traefik.http.routers.zobot-app.rule=Host(`app.botvance.com.br`)
         - traefik.http.routers.zobot-app.entrypoints=websecure
         - traefik.http.routers.zobot-app.tls.certresolver=letsencryptresolver
         - traefik.http.services.zobot-app.loadbalancer.server.port=80
