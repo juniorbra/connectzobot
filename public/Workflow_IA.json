@@ -1,0 +1,309 @@
+{
+  "name": "Workflow IA",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "** ESCREVA AQUI O SEU PROMPT **"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        -80,
+        -140
+      ],
+      "id": "ce57eef2-03fc-45cf-a495-2f8ba8d6d9b0",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -140,
+        100
+      ],
+      "id": "cabcab7b-24d4-4bb2-86da-915543312688",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "jeyLF0Z1akqs5Y6F",
+          "name": "OpenAi zobotapp"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        80
+      ],
+      "id": "fc1b7ded-27bb-4d05-ac4a-f3da798529c6",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "aWZQoU08HEX9TwJq",
+          "name": "Postgres Supabase zobotapp"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -620,
+        -320
+      ],
+      "id": "fb76cfa0-3c3a-4374-a603-4bad16d03016",
+      "name": "When chat message received",
+      "webhookId": "8a5bec0a-8e42-429f-ac57-d5e9985d3036"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "99578e16-ee8c-42b0-b4d0-a737fc6a92ae",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        360,
+        -140
+      ],
+      "id": "9e02e644-0e34-4fc2-b0fb-19bdaea3e16b",
+      "name": "Output"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4ba7a81b-28c6-4462-b1a4-15f6a5af331f",
+              "name": "chatInput",
+              "value": "={{ $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "9eb57fe1-6c4e-4611-b2a3-4b60205c9170",
+              "name": "sessionId",
+              "value": "={{ $json.body.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "5f9922bb-0df5-41a4-84d3-d1ad3f7c186b",
+              "name": "query",
+              "value": "={{ $json.query.q }}",
+              "type": "string"
+            },
+            {
+              "id": "8c41f4ec-62d3-4fae-b2e6-08c38c9940bb",
+              "name": "apiKey",
+              "value": "={{ $json.body.apikey }}",
+              "type": "string"
+            },
+            {
+              "id": "2421a253-8842-4eb0-b6c5-792c603b00a6",
+              "name": "evourl",
+              "value": "={{ $json.body.evourl }}",
+              "type": "string"
+            },
+            {
+              "id": "59a03419-63de-4e0d-8958-0c3fdffcdc5c",
+              "name": "instancia",
+              "value": "={{ $json.body.instancia }}",
+              "type": "string"
+            },
+            {
+              "id": "3995e9b7-1418-4462-810c-eacb789eef86",
+              "name": "remoteJid",
+              "value": "={{ $json.body.remoteJid }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        -140
+      ],
+      "id": "ad8f746c-be33-4105-9fef-5765934be545",
+      "name": "Input"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "9df99771-1769-4c7d-a6c2-da1cb86a5fff",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -620,
+        -140
+      ],
+      "id": "25885d98-480b-4e14-9725-001bfa9e5543",
+      "name": "Inicio",
+      "webhookId": "9df99771-1769-4c7d-a6c2-da1cb86a5fff"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://webhooks.botvance.com.br/webhook/output",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "output",
+              "value": "={{ $json.output }}"
+            },
+            {
+              "name": "q",
+              "value": "={{ $('Input').item.json.query }}"
+            },
+            {
+              "name": "apikey",
+              "value": "={{ $('Input').item.json.apiKey }}"
+            },
+            {
+              "name": "evourl",
+              "value": "={{ $('Input').item.json.evourl }}"
+            },
+            {
+              "name": "instancia",
+              "value": "={{ $('Input').item.json.instancia }}"
+            },
+            {
+              "name": "remoteJid",
+              "value": "={{ $('Input').item.json.remoteJid }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        580,
+        -140
+      ],
+      "id": "e111ffcb-ad53-4eed-96f7-afcb6a76c27e",
+      "name": "Fim"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output": {
+      "main": [
+        [
+          {
+            "node": "Fim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inicio": {
+      "main": [
+        [
+          {
+            "node": "Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "49b1bde7-078f-4db9-b539-1073cd0d645a",
+  "meta": {
+    "instanceId": "423467b12970d4ffe9c265ea1c0d77356299a8266779b082f0b1494fdcba0bc9"
+  },
+  "id": "LZebGnxFfKJamWEj",
+  "tags": []
+}

@@ -983,7 +983,7 @@ const [form, setForm] = useState<AgentForm>({
         if (id === 'new') {
           return (
             <div>
-              <h3 className="text-xl font-semibold mb-4">Conectar com WhatsApp</h3>
+              <h3 className="text-xl font-semibold mb-4">Copiar e Colar Workflow</h3>
               <div className="bg-yellow-900/30 border border-yellow-600 text-yellow-200 rounded-lg p-6 mb-6">
                 <strong>Salve as alterações do agente antes de conectar com o WhatsApp.</strong>
                 <div className="mt-2 text-sm">
@@ -1000,141 +1000,60 @@ const [form, setForm] = useState<AgentForm>({
             </div>
           );
         }
-        // (restante do conteúdo do antigo case 3, igual estava antes)
+        
+        // Modificado para incluir apenas a funcionalidade de copiar o workflow JSON e adicionar o campo de webhook URL
         return (
           <div>
-            <h3 className="text-xl font-semibold mb-4">Conectar com WhatsApp</h3>
+            <h3 className="text-xl font-semibold mb-4">Copiar o Workflow</h3>
             
-            {/* Status Indicator */}
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#374151] bg-[#2a3042]">
-                <div className={`w-3 h-3 rounded-full ${
-                  connectionStatus.text === 'Conectado' ? 'bg-green-500' :
-                  connectionStatus.text === 'Conectando' ? 'bg-orange-500' :
-                  connectionStatus.text === 'Verificando...' ? 'bg-yellow-500' :
-                  connectionStatus.text === 'Desconectado' ? 'bg-red-500' : 'bg-gray-400'
-                }`} />
-                <span className={`font-medium ${connectionStatus.color}`}>
-                  {connectionStatus.text}
-                </span>
-              </div>
-              <button
-                onClick={checkConnectionState}
-                disabled={isCheckingConnection}
-                className={`px-4 py-2 text-sm font-medium text-white bg-[#3b82f6] hover:bg-[#2563eb] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isCheckingConnection ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                Verificar
-              </button>
-              {connectionStatus.text === 'Conectado' && (
+            {/* Seção para copiar o workflow JSON */}
+            <div className="bg-[#1e2738] p-6 rounded-lg mb-6">
+              <p className="text-white mb-4">
+                Copie esse fluxo e cole em um novo workflow no seu n8n, em seguida abra o Webhook, copie e cole a URL no campo abaixo:
+              </p>
+              
+              <div className="relative mb-6">
                 <button
-                  onClick={handleDisconnect}
-                  disabled={isDisconnecting}
-                  className={`px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 ${
-                    isDisconnecting ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  onClick={() => {
+                    fetch('/Workflow_IA.json')
+                      .then(response => response.json())
+                      .then(data => {
+                        navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+                        setSuccess('Workflow copiado para a área de transferência!');
+                        setTimeout(() => setSuccess(null), 3000);
+                      })
+                      .catch(err => {
+                        setError('Erro ao copiar o workflow: ' + err.message);
+                        setTimeout(() => setError(null), 3000);
+                      });
+                  }}
+                  className="w-full flex items-center justify-center bg-[#3b82f6] hover:bg-[#2563eb] text-white py-3 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                 >
-                  Desconectar
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                  </svg>
+                  Copiar Workflow JSON
                 </button>
-              )}
+              </div>
+              
+              {/* Campo para inserir a URL do webhook */}
+              <div className="mt-6">
+                <label className="block text-gray-300 mb-2">
+                  URL do Webhook
+                </label>
+                <input
+                  type="text"
+                  name="webhook_url"
+                  value={form.webhook_url}
+                  onChange={handleChange}
+                  placeholder="Cole aqui a URL do webhook do n8n"
+                  className="w-full px-3 py-2 bg-[#2a3042] border border-[#374151] rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-gray-400 text-sm mt-2">
+                  Após colar o workflow no n8n, abra o nó "Inicio" (Webhook) e copie a URL gerada.
+                </p>
+              </div>
             </div>
-
-            {whatsappError && (
-              <div className="mb-6 p-4 bg-red-900/50 border border-red-500 rounded-lg text-red-200">
-                {whatsappError}
-              </div>
-            )}
-
-            {!qrCodeData ? (
-              <div className="bg-[#1e2738] p-6 rounded-lg mb-6">
-                <div className="flex items-center mb-4">
-                  <QrCode className="h-6 w-6 text-[#3b82f6] mr-2" />
-                  <h4 className="text-lg font-medium">Conectar WhatsApp</h4>
-                </div>
-                
-                <form onSubmit={handleConnectWhatsApp} className="space-y-4">
-                  <div>
-                    <label className="block text-gray-300 mb-2">
-                      Nome da Conexão
-                    </label>
-                    <input
-                      type="text"
-                      value={connectionName}
-                      onChange={(e) => {
-                        const raw = e.target.value.toLowerCase();
-                        const filtered = raw.replace(/[^a-z0-9\-_]/g, '').slice(0, 12);
-                        setConnectionName(filtered);
-                      }}
-                      maxLength={12}
-                      placeholder="Digite um nome (até 12 caracteres)"
-                      className="w-full px-3 py-2 bg-[#2a3042] border border-[#374151] rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 mb-2">
-                      Número do WhatsApp
-                    </label>
-                    <div className="flex">
-                      <select
-                        value={countryCode}
-                        onChange={(e) => setCountryCode(e.target.value)}
-                        className="w-24 px-3 py-2 bg-[#2a3042] border border-[#374151] rounded-l-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="+55">+55</option>
-                      </select>
-                      <input
-                        type="tel"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        placeholder="DDD + Número"
-                        className="flex-1 px-3 py-2 bg-[#2a3042] border border-[#374151] rounded-r-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isConnecting}
-                    className={`w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white py-3 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium ${
-                      isConnecting ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {isConnecting ? 'Conectando...' : 'Conectar WhatsApp'}
-                  </button>
-                </form>
-              </div>
-            ) : (
-              <div className="bg-[#1e2738] p-6 rounded-lg mb-6 text-center">
-                <h4 className="text-lg font-medium mb-4">Escaneie o QR Code</h4>
-                <div className="mb-4 bg-white p-4 inline-block rounded">
-                  {qrCodeData.base64 ? (
-                    <img
-                      src={qrCodeData.base64}
-                      alt="QR Code WhatsApp"
-                      className="mx-auto"
-                    />
-                  ) : (
-                    <p className="text-red-600">QR Code não disponível</p>
-                  )}
-                </div>
-                {qrCodeData.pairingCode && (
-                  <p className="text-gray-300 mb-4">
-                    Código de pareamento: <span className="font-mono font-bold">{qrCodeData.pairingCode}</span>
-                  </p>
-                )}
-                <button
-                  onClick={() => setQrCodeData(null)}
-                  className="text-[#3b82f6] hover:text-[#2563eb]"
-                >
-                  Tentar novamente
-                </button>
-              </div>
-            )}
-            
-            
           </div>
         );
       default:
@@ -1288,8 +1207,8 @@ const [form, setForm] = useState<AgentForm>({
                 <span className="font-bold">5</span>
               </div>
               <div>
-                <h3 className="font-semibold">Conectar com WhatsApp</h3>
-                <p className="text-sm text-gray-300">Configure o webhook para integração com Evolution API</p>
+                <h3 className="font-semibold">Copiar e Colar o Workflow</h3>
+                <p className="text-sm text-gray-300">Copie e cole este workflow no seu n8n</p>
               </div>
             </div>
           </div>
