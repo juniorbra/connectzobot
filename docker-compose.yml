@@ -16,7 +16,7 @@ services:
           - node.role == manager
       labels:
         - traefik.enable=true
-        - traefik.http.routers.conectabotvance.rule=Host(`app.botvance.com.br`)
+        - traefik.http.routers.conectabotvance.rule=Host(`conecta.botvance.com.br`)
         - traefik.http.routers.conectabotvance.entrypoints=websecure
         - traefik.http.routers.conectabotvance.tls.certresolver=letsencryptresolver
         - traefik.http.services.conectabotvance.loadbalancer.server.port=80
