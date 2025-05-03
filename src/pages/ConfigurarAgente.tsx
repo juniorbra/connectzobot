@@ -598,8 +598,7 @@ const [form, setForm] = useState<AgentForm>({
     }
   };
 
-  const nextStep = async () => {
-    await handleSubmit();
+  const nextStep = () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     }
