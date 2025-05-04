@@ -56,7 +56,14 @@ interface AgentForm {
   typing_delay_per_char_ms: number;
   concat_messages: boolean;
   concat_time_seconds: number;
-  context_window_size: number;
+  followup: boolean;
+  
+  // Campos para follow-up
+  followup_intervals: {
+    hours: number[];
+    minutes: number[];
+  };
+  followup_messages: string[];
 }
 
 const ConfigurarAgente: React.FC = () => {
@@ -98,7 +105,12 @@ const [form, setForm] = useState<AgentForm>({
   typing_delay_per_char_ms: 50,
   concat_messages: true,
   concat_time_seconds: 7,
-  context_window_size: 5
+  followup: false,
+  followup_intervals: {
+    hours: [0, 0, 0, 0, 0],
+    minutes: [0, 0, 0, 0, 0]
+  },
+  followup_messages: ['', '', '', '', '']
 });
   const [isDirty, setIsDirty] = useState(false);
   
@@ -309,6 +321,67 @@ const [form, setForm] = useState<AgentForm>({
         // Continue anyway, as we have the workflow data
       }
       
+      // Fetch follow-up data if workflow has followup enabled
+      let followupData = {
+        messages: ['', '', '', '', ''],
+        intervals: {
+          hours: [0, 0, 0, 0, 0],
+          minutes: [0, 0, 0, 0, 0]
+        }
+      };
+      
+      if (workflowData && workflowData.followup) {
+        const { data: fupMsgData, error: fupMsgError } = await supabase
+          .from('fup_msg')
+          .select('*')
+          .eq('workflow_id', id)
+          .maybeSingle();
+          
+        if (fupMsgError) {
+          console.error('Error fetching follow-up data:', fupMsgError);
+        } else if (fupMsgData) {
+          // Convert minutes to hours and minutes for display
+          const convertMinutesToHoursAndMinutes = (totalMinutes: number) => {
+            if (!totalMinutes) return { hours: 0, minutes: 0 };
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return { hours, minutes };
+          };
+          
+          const interval1 = convertMinutesToHoursAndMinutes(fupMsgData.intervalo_1 || 0);
+          const interval2 = convertMinutesToHoursAndMinutes(fupMsgData.intervalo_2 || 0);
+          const interval3 = convertMinutesToHoursAndMinutes(fupMsgData.intervalo_3 || 0);
+          const interval4 = convertMinutesToHoursAndMinutes(fupMsgData.intervalo_4 || 0);
+          const interval5 = convertMinutesToHoursAndMinutes(fupMsgData.intervalo_5 || 0);
+          
+          followupData = {
+            messages: [
+              fupMsgData.estagio_1 || '',
+              fupMsgData.estagio_2 || '',
+              fupMsgData.estagio_3 || '',
+              fupMsgData.estagio_4 || '',
+              fupMsgData.estagio_5 || ''
+            ],
+            intervals: {
+              hours: [
+                interval1.hours,
+                interval2.hours,
+                interval3.hours,
+                interval4.hours,
+                interval5.hours
+              ],
+              minutes: [
+                interval1.minutes,
+                interval2.minutes,
+                interval3.minutes,
+                interval4.minutes,
+                interval5.minutes
+              ]
+            }
+          };
+        }
+      }
+      
       if (workflowData) {
         setForm({
           name: workflowData.name || '',
@@ -337,7 +410,9 @@ const [form, setForm] = useState<AgentForm>({
           typing_delay_per_char_ms: workflowData.typing_delay_per_char_ms ?? 50,
           concat_messages: workflowData.concat_messages ?? true,
           concat_time_seconds: workflowData.concat_time_seconds ?? 7,
-          context_window_size: workflowData.context_window_size ?? 5
+          followup: workflowData.followup ?? false,
+          followup_intervals: followupData.intervals,
+          followup_messages: followupData.messages
         });
       }
     } catch (error) {
@@ -422,13 +497,48 @@ const [form, setForm] = useState<AgentForm>({
               show_typing_indicator: form.show_typing_indicator,
               typing_delay_per_char_ms: form.typing_delay_per_char_ms,
               concat_messages: form.concat_messages,
-              concat_time_seconds: form.concat_time_seconds
+              concat_time_seconds: form.concat_time_seconds,
+              followup: form.followup
             }
           ])
           .select()
           .single();
 
         if (workflowError) throw workflowError;
+
+        // If followup is enabled, save the follow-up data
+        if (form.followup && workflowData.id) {
+          // Convert hours and minutes to total minutes for each interval
+          const intervalo_1 = form.followup_intervals.hours[0] * 60 + form.followup_intervals.minutes[0];
+          const intervalo_2 = form.followup_intervals.hours[1] * 60 + form.followup_intervals.minutes[1];
+          const intervalo_3 = form.followup_intervals.hours[2] * 60 + form.followup_intervals.minutes[2];
+          const intervalo_4 = form.followup_intervals.hours[3] * 60 + form.followup_intervals.minutes[3];
+          const intervalo_5 = form.followup_intervals.hours[4] * 60 + form.followup_intervals.minutes[4];
+
+          // Insert the follow-up data
+          const { error: fupMsgError } = await supabase
+            .from('fup_msg')
+            .insert([
+              {
+                workflow_id: workflowData.id,
+                estagio_1: form.followup_messages[0],
+                estagio_2: form.followup_messages[1],
+                estagio_3: form.followup_messages[2],
+                estagio_4: form.followup_messages[3],
+                estagio_5: form.followup_messages[4],
+                intervalo_1,
+                intervalo_2,
+                intervalo_3,
+                intervalo_4,
+                intervalo_5
+              }
+            ]);
+
+          if (fupMsgError) {
+            console.error('Error saving follow-up data:', fupMsgError);
+            // Continue anyway, as the workflow was created successfully
+          }
+        }
 
         // If question and answer are provided, insert them into qa_pairs
         if (form.question && form.response_template && workflowData.id) {
@@ -502,12 +612,69 @@ const [form, setForm] = useState<AgentForm>({
             show_typing_indicator: form.show_typing_indicator,
             typing_delay_per_char_ms: form.typing_delay_per_char_ms,
             concat_messages: form.concat_messages,
-            concat_time_seconds: form.concat_time_seconds
+            concat_time_seconds: form.concat_time_seconds,
+            followup: form.followup
           })
           .eq('id', id)
           .eq('user_id', user?.id);
 
         if (workflowError) throw workflowError;
+
+        // If followup is enabled, save or update the follow-up data
+        if (form.followup && id) {
+          // Convert hours and minutes to total minutes for each interval
+          const intervalo_1 = form.followup_intervals.hours[0] * 60 + form.followup_intervals.minutes[0];
+          const intervalo_2 = form.followup_intervals.hours[1] * 60 + form.followup_intervals.minutes[1];
+          const intervalo_3 = form.followup_intervals.hours[2] * 60 + form.followup_intervals.minutes[2];
+          const intervalo_4 = form.followup_intervals.hours[3] * 60 + form.followup_intervals.minutes[3];
+          const intervalo_5 = form.followup_intervals.hours[4] * 60 + form.followup_intervals.minutes[4];
+
+          // Check if there's an existing follow-up data for this workflow
+          const { data: existingFupMsg, error: fupMsgFetchError } = await supabase
+            .from('fup_msg')
+            .select('id')
+            .eq('workflow_id', id)
+            .maybeSingle();
+
+          if (fupMsgFetchError) {
+            console.error('Error fetching follow-up data:', fupMsgFetchError);
+          }
+
+          const fupMsgPayload = {
+            workflow_id: id,
+            estagio_1: form.followup_messages[0],
+            estagio_2: form.followup_messages[1],
+            estagio_3: form.followup_messages[2],
+            estagio_4: form.followup_messages[3],
+            estagio_5: form.followup_messages[4],
+            intervalo_1,
+            intervalo_2,
+            intervalo_3,
+            intervalo_4,
+            intervalo_5
+          };
+
+          if (existingFupMsg?.id) {
+            // Update existing follow-up data
+            const { error: fupMsgUpdateError } = await supabase
+              .from('fup_msg')
+              .update(fupMsgPayload)
+              .eq('id', existingFupMsg.id);
+
+            if (fupMsgUpdateError) {
+              console.error('Error updating follow-up data:', fupMsgUpdateError);
+            }
+          } else {
+            // Insert new follow-up data
+            const { error: fupMsgInsertError } = await supabase
+              .from('fup_msg')
+              .insert([fupMsgPayload]);
+
+            if (fupMsgInsertError) {
+              console.error('Error inserting follow-up data:', fupMsgInsertError);
+            }
+          }
+        }
 
         // Check if there's an existing QA pair for this workflow
         const { data: existingQA, error: qaFetchError } = await supabase
@@ -816,25 +983,6 @@ const [form, setForm] = useState<AgentForm>({
 
             {/* Novas opções avançadas */}
             <div className="bg-[#1e2738] p-4 rounded-lg mb-6 space-y-6">
-
-              {/* Tamanho da janela de contexto */}
-              <div>
-                <label className="text-white font-medium text-lg mb-1 block">Tamanho da janela de contexto</label>
-                <div className="flex items-center space-x-2 mb-1">
-                  <input
-                    type="number"
-                    name="context_window_size"
-                    min={1}
-                    value={form.context_window_size}
-                    onChange={handleChange}
-                    className="w-20 bg-[#2a3042] border border-[#374151] rounded px-2 py-1 text-white"
-                  />
-                  <span className="text-gray-400">mensagens</span>
-                </div>
-                <span className="text-gray-400 text-xs">
-                  Quantidade de mensagens anteriores que o bot considera para gerar uma resposta contextualizada.
-                </span>
-              </div>
               {/* Parar o bot ao enviar mensagem */}
               <div>
                 <label className="flex items-center mb-2">
@@ -934,6 +1082,387 @@ const [form, setForm] = useState<AgentForm>({
                 </div>
                 <span className="text-gray-400 text-xs">Tempo que o bot vai juntar mensagens consecutivas e dar uma resposta apenas</span>
               </div>
+
+              {/* Follow-up */}
+              <div>
+                <label className="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    name="followup"
+                    checked={form.followup}
+                    onChange={handleCheckboxChange}
+                    className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 bg-[#2a3042] border-[#374151]"
+                  />
+                  <span className="ml-2 text-white font-medium text-lg">Reativação da conversa</span>
+                </label>
+                <span className="text-gray-400 text-sm">Habilitar funcionalidade de reativação da conversa para este workflow</span>
+              </div>
+
+              {/* Follow-up Configuration - Only shown when followup is enabled */}
+              {form.followup && (
+                <div className="mt-4 border-t border-[#2a3042] pt-4">
+                  <h4 className="text-white font-medium text-lg mb-4">Configuração de Reativação</h4>
+                  
+                  {/* Interval 1 */}
+                  <div className="mb-6 bg-[#131825] p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center">
+                        <span className="text-white font-medium">Intervalo 1</span>
+                        <div className="flex items-center ml-4">
+                          <input
+                            type="number"
+                            min="0"
+                            max="23"
+                            value={form.followup_intervals.hours[0]}
+                            onChange={(e) => {
+                              const value = Math.min(23, Math.max(0, parseInt(e.target.value) || 0));
+                              setForm(prev => ({
+                                ...prev,
+                                followup_intervals: {
+                                  ...prev.followup_intervals,
+                                  hours: [
+                                    value,
+                                    ...prev.followup_intervals.hours.slice(1)
+                                  ]
+                                }
+                              }));
+                              setIsDirty(true);
+                            }}
+                            className="w-16 bg-[#2a3042] border border-[#374151] rounded px-2 py-1 text-white"
+                          />
+                          <span className="mx-1 text-gray-400">:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="59"
+                            value={form.followup_intervals.minutes[0]}
+                            onChange={(e) => {
+                              const value = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                              setForm(prev => ({
+                                ...prev,
+                                followup_intervals: {
+                                  ...prev.followup_intervals,
+                                  minutes: [
+                                    value,
+                                    ...prev.followup_intervals.minutes.slice(1)
+                                  ]
+                                }
+                              }));
+                              setIsDirty(true);
+                            }}
+                            className="w-16 bg-[#2a3042] border border-[#374151] rounded px-2 py-1 text-white"
+                          />
+                        </div>
+                      </div>
+                      <span className="text-gray-400">HH:mm</span>
+                    </div>
+                    <textarea
+                      value={form.followup_messages[0]}
+                      onChange={(e) => {
+                        setForm(prev => ({
+                          ...prev,
+                          followup_messages: [
+                            e.target.value,
+                            ...prev.followup_messages.slice(1)
+                          ]
+                        }));
+                        setIsDirty(true);
+                      }}
+                      className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-24"
+                      placeholder="Mensagem para o primeiro intervalo..."
+                    ></textarea>
+                  </div>
+
+                  {/* Interval 2 */}
+                  <div className="mb-6 bg-[#131825] p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center">
+                        <span className="text-white font-medium">Intervalo 2</span>
+                        <div className="flex items-center ml-4">
+                          <input
+                            type="number"
+                            min="0"
+                            max="23"
+                            value={form.followup_intervals.hours[1]}
+                            onChange={(e) => {
+                              const value = Math.min(23, Math.max(0, parseInt(e.target.value) || 0));
+                              setForm(prev => ({
+                                ...prev,
+                                followup_intervals: {
+                                  ...prev.followup_intervals,
+                                  hours: [
+                                    prev.followup_intervals.hours[0],
+                                    value,
+                                    ...prev.followup_intervals.hours.slice(2)
+                                  ]
+                                }
+                              }));
+                              setIsDirty(true);
+                            }}
+                            className="w-16 bg-[#2a3042] border border-[#374151] rounded px-2 py-1 text-white"
+                          />
+                          <span className="mx-1 text-gray-400">:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="59"
+                            value={form.followup_intervals.minutes[1]}
+                            onChange={(e) => {
+                              const value = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                              setForm(prev => ({
+                                ...prev,
+                                followup_intervals: {
+                                  ...prev.followup_intervals,
+                                  minutes: [
+                                    prev.followup_intervals.minutes[0],
+                                    value,
+                                    ...prev.followup_intervals.minutes.slice(2)
+                                  ]
+                                }
+                              }));
+                              setIsDirty(true);
+                            }}
+                            className="w-16 bg-[#2a3042] border border-[#374151] rounded px-2 py-1 text-white"
+                          />
+                        </div>
+                      </div>
+                      <span className="text-gray-400">HH:mm</span>
+                    </div>
+                    <textarea
+                      value={form.followup_messages[1]}
+                      onChange={(e) => {
+                        setForm(prev => ({
+                          ...prev,
+                          followup_messages: [
+                            prev.followup_messages[0],
+                            e.target.value,
+                            ...prev.followup_messages.slice(2)
+                          ]
+                        }));
+                        setIsDirty(true);
+                      }}
+                      className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-24"
+                      placeholder="Mensagem para o segundo intervalo..."
+                    ></textarea>
+                  </div>
+
+                  {/* Interval 3 */}
+                  <div className="mb-6 bg-[#131825] p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center">
+                        <span className="text-white font-medium">Intervalo 3</span>
+                        <div className="flex items-center ml-4">
+                          <input
+                            type="number"
+                            min="0"
+                            max="23"
+                            value={form.followup_intervals.hours[2]}
+                            onChange={(e) => {
+                              const value = Math.min(23, Math.max(0, parseInt(e.target.value) || 0));
+                              setForm(prev => ({
+                                ...prev,
+                                followup_intervals: {
+                                  ...prev.followup_intervals,
+                                  hours: [
+                                    ...prev.followup_intervals.hours.slice(0, 2),
+                                    value,
+                                    ...prev.followup_intervals.hours.slice(3)
+                                  ]
+                                }
+                              }));
+                              setIsDirty(true);
+                            }}
+                            className="w-16 bg-[#2a3042] border border-[#374151] rounded px-2 py-1 text-white"
+                          />
+                          <span className="mx-1 text-gray-400">:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="59"
+                            value={form.followup_intervals.minutes[2]}
+                            onChange={(e) => {
+                              const value = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                              setForm(prev => ({
+                                ...prev,
+                                followup_intervals: {
+                                  ...prev.followup_intervals,
+                                  minutes: [
+                                    ...prev.followup_intervals.minutes.slice(0, 2),
+                                    value,
+                                    ...prev.followup_intervals.minutes.slice(3)
+                                  ]
+                                }
+                              }));
+                              setIsDirty(true);
+                            }}
+                            className="w-16 bg-[#2a3042] border border-[#374151] rounded px-2 py-1 text-white"
+                          />
+                        </div>
+                      </div>
+                      <span className="text-gray-400">HH:mm</span>
+                    </div>
+                    <textarea
+                      value={form.followup_messages[2]}
+                      onChange={(e) => {
+                        setForm(prev => ({
+                          ...prev,
+                          followup_messages: [
+                            ...prev.followup_messages.slice(0, 2),
+                            e.target.value,
+                            ...prev.followup_messages.slice(3)
+                          ]
+                        }));
+                        setIsDirty(true);
+                      }}
+                      className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-24"
+                      placeholder="Mensagem para o terceiro intervalo..."
+                    ></textarea>
+                  </div>
+
+                  {/* Interval 4 */}
+                  <div className="mb-6 bg-[#131825] p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center">
+                        <span className="text-white font-medium">Intervalo 4</span>
+                        <div className="flex items-center ml-4">
+                          <input
+                            type="number"
+                            min="0"
+                            max="23"
+                            value={form.followup_intervals.hours[3]}
+                            onChange={(e) => {
+                              const value = Math.min(23, Math.max(0, parseInt(e.target.value) || 0));
+                              setForm(prev => ({
+                                ...prev,
+                                followup_intervals: {
+                                  ...prev.followup_intervals,
+                                  hours: [
+                                    ...prev.followup_intervals.hours.slice(0, 3),
+                                    value,
+                                    prev.followup_intervals.hours[4]
+                                  ]
+                                }
+                              }));
+                              setIsDirty(true);
+                            }}
+                            className="w-16 bg-[#2a3042] border border-[#374151] rounded px-2 py-1 text-white"
+                          />
+                          <span className="mx-1 text-gray-400">:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="59"
+                            value={form.followup_intervals.minutes[3]}
+                            onChange={(e) => {
+                              const value = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                              setForm(prev => ({
+                                ...prev,
+                                followup_intervals: {
+                                  ...prev.followup_intervals,
+                                  minutes: [
+                                    ...prev.followup_intervals.minutes.slice(0, 3),
+                                    value,
+                                    prev.followup_intervals.minutes[4]
+                                  ]
+                                }
+                              }));
+                              setIsDirty(true);
+                            }}
+                            className="w-16 bg-[#2a3042] border border-[#374151] rounded px-2 py-1 text-white"
+                          />
+                        </div>
+                      </div>
+                      <span className="text-gray-400">HH:mm</span>
+                    </div>
+                    <textarea
+                      value={form.followup_messages[3]}
+                      onChange={(e) => {
+                        setForm(prev => ({
+                          ...prev,
+                          followup_messages: [
+                            ...prev.followup_messages.slice(0, 3),
+                            e.target.value,
+                            prev.followup_messages[4]
+                          ]
+                        }));
+                        setIsDirty(true);
+                      }}
+                      className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-24"
+                      placeholder="Mensagem para o quarto intervalo..."
+                    ></textarea>
+                  </div>
+
+                  {/* Interval 5 */}
+                  <div className="mb-6 bg-[#131825] p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center">
+                        <span className="text-white font-medium">Intervalo 5</span>
+                        <div className="flex items-center ml-4">
+                          <input
+                            type="number"
+                            min="0"
+                            max="23"
+                            value={form.followup_intervals.hours[4]}
+                            onChange={(e) => {
+                              const value = Math.min(23, Math.max(0, parseInt(e.target.value) || 0));
+                              setForm(prev => ({
+                                ...prev,
+                                followup_intervals: {
+                                  ...prev.followup_intervals,
+                                  hours: [
+                                    ...prev.followup_intervals.hours.slice(0, 4),
+                                    value
+                                  ]
+                                }
+                              }));
+                              setIsDirty(true);
+                            }}
+                            className="w-16 bg-[#2a3042] border border-[#374151] rounded px-2 py-1 text-white"
+                          />
+                          <span className="mx-1 text-gray-400">:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="59"
+                            value={form.followup_intervals.minutes[4]}
+                            onChange={(e) => {
+                              const value = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                              setForm(prev => ({
+                                ...prev,
+                                followup_intervals: {
+                                  ...prev.followup_intervals,
+                                  minutes: [
+                                    ...prev.followup_intervals.minutes.slice(0, 4),
+                                    value
+                                  ]
+                                }
+                              }));
+                              setIsDirty(true);
+                            }}
+                            className="w-16 bg-[#2a3042] border border-[#374151] rounded px-2 py-1 text-white"
+                          />
+                        </div>
+                      </div>
+                      <span className="text-gray-400">HH:mm</span>
+                    </div>
+                    <textarea
+                      value={form.followup_messages[4]}
+                      onChange={(e) => {
+                        setForm(prev => ({
+                          ...prev,
+                          followup_messages: [
+                            ...prev.followup_messages.slice(0, 4),
+                            e.target.value
+                          ]
+                        }));
+                        setIsDirty(true);
+                      }}
+                      className="w-full bg-[#2a3042] border border-[#374151] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-24"
+                      placeholder="Mensagem para o quinto intervalo..."
+                    ></textarea>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );

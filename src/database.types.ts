@@ -1,6 +1,176 @@
 export interface Database {
   public: {
     Tables: {
+      fup_stages: {
+        Row: {
+          id: string;
+          workflow_id: string;
+          instancia: string;
+          key: string;
+          numero: string;
+          created_at: string;
+          estagio: number;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workflow_id: string;
+          instancia?: string;
+          key?: string;
+          numero?: string;
+          created_at?: string;
+          estagio?: number;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workflow_id?: string;
+          instancia?: string;
+          key?: string;
+          numero?: string;
+          created_at?: string;
+          estagio?: number;
+          updated_at?: string;
+        };
+      };
+      fup_msg: {
+        Row: {
+          id: string;
+          workflow_id: string;
+          estagio_1?: string;
+          estagio_2?: string;
+          estagio_3?: string;
+          estagio_4?: string;
+          estagio_5?: string;
+          intervalo_1?: number;
+          intervalo_2?: number;
+          intervalo_3?: number;
+          intervalo_4?: number;
+          intervalo_5?: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workflow_id: string;
+          estagio_1?: string;
+          estagio_2?: string;
+          estagio_3?: string;
+          estagio_4?: string;
+          estagio_5?: string;
+          intervalo_1?: number;
+          intervalo_2?: number;
+          intervalo_3?: number;
+          intervalo_4?: number;
+          intervalo_5?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workflow_id?: string;
+          estagio_1?: string;
+          estagio_2?: string;
+          estagio_3?: string;
+          estagio_4?: string;
+          estagio_5?: string;
+          intervalo_1?: number;
+          intervalo_2?: number;
+          intervalo_3?: number;
+          intervalo_4?: number;
+          intervalo_5?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      workflows: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          description?: string;
+          active: boolean;
+          created_at: string;
+          updated_at: string;
+          stop_bot_on_message: boolean;
+          pause_window_minutes: number;
+          split_long_messages: boolean;
+          show_typing_indicator: boolean;
+          typing_delay_per_char_ms: number;
+          concat_messages: boolean;
+          concat_time_seconds: number;
+          workflow_json?: any;
+          followup: boolean;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          description?: string;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          stop_bot_on_message?: boolean;
+          pause_window_minutes?: number;
+          split_long_messages?: boolean;
+          show_typing_indicator?: boolean;
+          typing_delay_per_char_ms?: number;
+          concat_messages?: boolean;
+          concat_time_seconds?: number;
+          workflow_json?: any;
+          followup?: boolean;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          description?: string;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          stop_bot_on_message?: boolean;
+          pause_window_minutes?: number;
+          split_long_messages?: boolean;
+          show_typing_indicator?: boolean;
+          typing_delay_per_char_ms?: number;
+          concat_messages?: boolean;
+          concat_time_seconds?: number;
+          workflow_json?: any;
+          followup?: boolean;
+        };
+      };
+      connections: {
+        Row: {
+          id: string;
+          user_id: string;
+          workflow_id: string;
+          instance_name: string;
+          state?: string;
+          wa_number?: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          workflow_id: string;
+          instance_name: string;
+          state?: string;
+          wa_number?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          workflow_id?: string;
+          instance_name?: string;
+          state?: string;
+          wa_number?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       qa_pairs: {
         Row: {
           id: string;
