@@ -813,46 +813,6 @@ const [form, setForm] = useState<AgentForm>({
         return (
           <div>
             <h3 className="text-xl font-semibold mb-4">Configurações Adicionais</h3>
-            <div className="mb-6">
-              <label className="block text-gray-300 mb-2">
-                Temperatura: {form.advanced_settings.temperature}
-              </label>
-              <input
-                type="range"
-                name="temperature"
-                min="0"
-                max="1"
-                step="0.1"
-                value={form.advanced_settings.temperature}
-                onChange={handleAdvancedSettingsChange}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-gray-400">
-                <span>Mais preciso</span>
-                <span>Mais criativo</span>
-              </div>
-            </div>
-            
-            <div className="mb-6">
-              <label className="block text-gray-300 mb-2">
-                Máximo de Tokens: {form.advanced_settings.max_tokens}
-              </label>
-              <input
-                type="range"
-                name="max_tokens"
-                min="100"
-                max="4000"
-                step="100"
-                value={form.advanced_settings.max_tokens}
-                onChange={handleAdvancedSettingsChange}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-gray-400">
-                <span>Respostas curtas</span>
-                <span>Respostas longas</span>
-              </div>
-            </div>
-            
 
             {/* Novas opções avançadas */}
             <div className="bg-[#1e2738] p-4 rounded-lg mb-6 space-y-6">
@@ -887,7 +847,7 @@ const [form, setForm] = useState<AgentForm>({
                   />
                   <span className="ml-2 text-white font-medium text-lg">Parar bot ao enviar mensagem</span>
                 </label>
-                <span className="text-gray-400 text-sm block mb-2">Parar o bot ao atendente enviar uma mensagem</span>
+                <span className="text-gray-400 text-sm block mb-2">Parar o bot quando eu enviar uma mensagem</span>
                 <div className="flex items-center space-x-2 mb-1">
                   <label className="text-gray-300 font-medium">Janela de pausa</label>
                   <input
@@ -900,7 +860,7 @@ const [form, setForm] = useState<AgentForm>({
                   />
                   <span className="text-gray-400">min</span>
                 </div>
-                <span className="text-gray-400 text-xs">tempo de pausa do bot para eu responder as mensagens</span>
+                <span className="text-gray-400 text-xs">Tempo de pausa do bot para eu responder as mensagens</span>
               </div>
 
               {/* Dividir mensagens em partes menores */}
@@ -972,7 +932,7 @@ const [form, setForm] = useState<AgentForm>({
                   />
                   <span className="text-gray-400">seg</span>
                 </div>
-                <span className="text-gray-400 text-xs">tempo que o bot vai juntar mensagens consecutivas e dar uma resposta apenas</span>
+                <span className="text-gray-400 text-xs">Tempo que o bot vai juntar mensagens consecutivas e dar uma resposta apenas</span>
               </div>
             </div>
           </div>
