@@ -112,8 +112,9 @@ const PainelControle: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#1a1f2e] text-white">
       {/* Header */}
-      <header className="bg-[#131825] p-4 flex justify-between items-center border-b border-[#2a3042]">
-        <div className="flex items-center">
+      <header className="bg-[#131825] p-4 flex items-center border-b border-[#2a3042]">
+        {/* Left section */}
+        <div className="flex items-center flex-1">
           <div className="bg-[#3b82f6] p-2 rounded mr-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -121,7 +122,14 @@ const PainelControle: React.FC = () => {
           </div>
           <h1 className="text-2xl font-bold">Painel de Controle</h1>
         </div>
-        <div className="flex items-center">
+        
+        {/* Center section with logo */}
+        <div className="flex justify-center items-center flex-1">
+          <img src="/images/logo_conecta_botvance.png" alt="Logo Conecta Botvance" className="h-10" />
+        </div>
+        
+        {/* Right section */}
+        <div className="flex items-center justify-end flex-1">
           <button 
             className="flex items-center bg-[#2a3042] hover:bg-[#374151] rounded-full px-4 py-2 mr-2"
             onClick={async () => {

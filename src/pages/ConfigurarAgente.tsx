@@ -1552,8 +1552,9 @@ const [form, setForm] = useState<AgentForm>({
   return (
     <div className="min-h-screen bg-[#1a1f2e] text-white">
       {/* Header */}
-      <header className="bg-[#131825] p-4 flex justify-between items-center">
-        <div className="flex items-center">
+      <header className="bg-[#131825] p-4 flex items-center">
+        {/* Left section */}
+        <div className="flex items-center flex-1">
           <button 
             onClick={() => {
               if (isDirty) {
@@ -1571,7 +1572,14 @@ const [form, setForm] = useState<AgentForm>({
           </button>
           <h1 className="text-2xl font-bold">Editar Configurações do Agente</h1>
         </div>
-        <div className="flex items-center">
+        
+        {/* Center section with logo */}
+        <div className="flex justify-center items-center flex-1">
+          <img src="/images/logo_conecta_botvance.png" alt="Logo Conecta Botvance" className="h-10" />
+        </div>
+        
+        {/* Right section */}
+        <div className="flex items-center justify-end flex-1">
           <button 
             onClick={handleSubmit}
             disabled={saving}

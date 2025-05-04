@@ -33,7 +33,7 @@ export default function Registro() {
     <div className="min-h-screen bg-[#1a1f2e] flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-[#131825] rounded-lg shadow-lg p-8">
         <div className="flex justify-center mb-8">
-          <img src="https://zobot.app/logozobotwebsite.png" alt="Logo Zobot" className="h-12" />
+          <img src="/images/logo_conecta_botvance.png" alt="Logo Conecta Botvance" className="h-12" />
         </div>
         
         {isSuccess ? (
