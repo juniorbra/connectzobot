@@ -78,11 +78,19 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="mt-4 text-center text-gray-400">
-          <Link to="/resetar-senha" className="text-blue-400 hover:text-blue-300">
-            Esqueceu sua senha?
-          </Link>
-        </p>
+        <div className="mt-4 text-center text-gray-400 space-y-2">
+          <p>
+            <Link to="/resetar-senha" className="text-blue-400 hover:text-blue-300">
+              Esqueceu sua senha?
+            </Link>
+          </p>
+          <p>
+            Não tem uma conta?{' '}
+            <Link to="/registro" className="text-blue-400 hover:text-blue-300">
+              Registre-se
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

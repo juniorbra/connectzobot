@@ -12,9 +12,17 @@ interface Workflow {
   user_id: string;
 }
 
+interface Subscription {
+  id: string;
+  number_workflows: number;
+  subscription: boolean;
+}
+
 const PainelControle: React.FC = () => {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState<'agents' | 'account'>('agents');
@@ -26,7 +34,29 @@ const PainelControle: React.FC = () => {
     }
 
     fetchWorkflows();
+    fetchSubscription();
   }, [user, navigate]);
+
+  const fetchSubscription = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('subscription')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching subscription:', error);
+        return;
+      }
+      
+      setSubscription(data);
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+    }
+  };
 
   const fetchWorkflows = async () => {
     try {
@@ -49,7 +79,12 @@ const PainelControle: React.FC = () => {
   };
 
   const handleCreateWorkflow = () => {
-    navigate('/configurar-agente/new');
+    // Check if user is on free plan and already has 3 or more workflows
+    if (subscription && !subscription.subscription && workflows.length >= 3) {
+      setShowSubscriptionModal(true);
+    } else {
+      navigate('/configurar-agente/new');
+    }
   };
 
   const handleConfigureWorkflow = (id: string) => {
@@ -223,6 +258,48 @@ const PainelControle: React.FC = () => {
           <MinhaContaPanel />
         )}
       </main>
+
+      {/* Subscription Modal */}
+      {showSubscriptionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#131825] rounded-lg shadow-lg p-6 max-w-md w-full">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold text-white">Limite de Conectores Atingido</h3>
+              <button 
+                onClick={() => setShowSubscriptionModal(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-white mb-4">
+                No plano grátis você só pode ter até 3 workflows. Assine o plano pago para ter workflows ilimitados.
+              </p>
+              <a 
+                href="https://www.asaas.com/c/igke3ggpqfuou12d" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:text-blue-300 underline"
+              >
+                Clique aqui e conheça os planos
+              </a>
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowSubscriptionModal(false)}
+                className="bg-[#3b82f6] hover:bg-[#2563eb] text-white px-4 py-2 rounded-md"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -6,33 +6,52 @@ import { supabase } from '../lib/supabase';
 import { Database } from '../database.types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
+type Subscription = Database['public']['Tables']['subscription']['Row'];
 
 export default function MinhaContaPanel() {
   const [profile, setProfile] = React.useState<Profile | null>(null);
+  const [subscription, setSubscription] = React.useState<Subscription | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const { user } = useAuth();
 
   React.useEffect(() => {
-    async function loadProfile() {
+    async function loadData() {
       if (!user) return;
 
       try {
-        // Usando a função RPC get_profile para obter o perfil do usuário atual
-        const { data, error } = await supabase
-          .rpc('get_profile')
+        setIsLoading(true);
+        
+        // Fetch profile data
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
           .single();
 
-        if (error) throw error;
-        // Garantir que o tipo está correto
-        setProfile(data as Profile);
+        if (profileError) throw profileError;
+        setProfile(profileData);
+        
+        // Fetch subscription data
+        const { data: subscriptionData, error: subscriptionError } = await supabase
+          .from('subscription')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+          
+        if (subscriptionError && subscriptionError.code !== 'PGRST116') {
+          // Only throw if it's not a "not found" error
+          throw subscriptionError;
+        }
+        
+        setSubscription(subscriptionData);
       } catch (error) {
-        console.error('Error loading profile:', error);
+        console.error('Error loading data:', error);
       } finally {
         setIsLoading(false);
       }
     }
 
-    loadProfile();
+    loadData();
   }, [user]);
 
   if (isLoading) {
@@ -51,10 +70,7 @@ export default function MinhaContaPanel() {
     );
   }
 
-  // Calcular a porcentagem de utilização com valores padrão caso sejam undefined
-  const consumo = profile.consumo ?? 0;
-  const franquia = profile.franquia ?? 1000;
-  const utilizacaoPercentual = Math.round((consumo / franquia) * 100);
+  // Format phone number for display
 
   const formatPhoneNumber = (phone: string) => {
     if (!phone) return 'Não conectado';
@@ -95,30 +111,18 @@ export default function MinhaContaPanel() {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-400">Status da Assinatura</label>
-            <p className={`mt-1 text-lg font-medium ${profile.assinatura === true ? 'text-green-400' : 'text-red-400'}`}>
-              {profile.assinatura === true ? 'Ativa' : 'Inativa'}
+            <label className="text-sm font-medium text-gray-400">Plano</label>
+            <p className={`mt-1 text-lg font-medium ${subscription?.subscription === true ? 'text-green-400' : 'text-red-400'}`}>
+              {subscription?.subscription === true ? 'Plano Pago' : 'Plano Grátis'}
             </p>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-400">Utilização</label>
-            <p className="mt-1 text-lg text-white">{consumo} mensagens</p>
+            <label className="text-sm font-medium text-gray-400">Workflows Criados</label>
+            <p className="mt-1 text-lg text-white">{subscription?.number_workflows || 0}</p>
           </div>
 
-          <div>
-            <label className="text-sm font-medium text-gray-400">Franquia do Plano</label>
-            <p className="mt-1 text-lg text-white">{franquia} mensagens</p>
-            <div className="mt-2">
-              <div className="w-full bg-[#2a3042] rounded-full h-4">
-                <div
-                  className="bg-[#3b82f6] h-4 rounded-full transition-all duration-500"
-                  style={{ width: `${utilizacaoPercentual}%` }}
-                ></div>
-              </div>
-              <p className="text-sm text-gray-400 mt-1">{utilizacaoPercentual}% utilizado</p>
-            </div>
-          </div>
+          {/* Subscription information is displayed above */}
         </div>
       </div>
     </div>

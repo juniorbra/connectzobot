@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import Login from './pages/Login';
+import Registro from './pages/Registro';
 import ResetarSenha from './pages/ResetarSenha';
 import ConectarWhatsapp from './pages/ConectarWhatsapp';
 import ConfigurarAgente from './pages/ConfigurarAgente';
@@ -28,6 +29,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login/" element={<Login />} />
+        <Route path="/registro" element={<Registro />} />
         <Route path="/resetar-senha" element={<ResetarSenha />} />
         <Route
           path="/minha-conta"

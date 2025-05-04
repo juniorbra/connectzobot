@@ -47,16 +47,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (signUpError) throw signUpError;
     
     if (data.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([{ 
-          id: data.user.id, 
-          nome, 
-          telefone, 
-          email 
-        }]);
-
-      if (profileError) throw profileError;
+      try {
+        // Check if profile already exists
+        const { data: existingProfile, error: fetchError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          // Error other than "not found"
+          throw fetchError;
+        }
+        
+        if (existingProfile) {
+          // Profile exists, update it
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ 
+              nome, 
+              telefone, 
+              email 
+            })
+            .eq('id', data.user.id);
+          
+          if (updateError) throw updateError;
+        } else {
+          // Profile doesn't exist, insert it
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert([{ 
+              id: data.user.id, 
+              nome, 
+              telefone, 
+              email 
+            }]);
+          
+          if (insertError) throw insertError;
+        }
+        
+        // Create subscription record for the new user
+        const { error: subscriptionError } = await supabase
+          .from('subscription')
+          .insert([{
+            id: data.user.id,
+            number_workflows: 0,
+            subscription: false
+          }]);
+          
+        if (subscriptionError && subscriptionError.code !== '23505') { // Ignore duplicate key error
+          throw subscriptionError;
+        }
+      } catch (error) {
+        console.error('Error setting up user profile:', error);
+        throw error;
+      }
     }
   };
 
