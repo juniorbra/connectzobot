@@ -1,6 +1,29 @@
 export interface Database {
   public: {
     Tables: {
+      subscription: {
+        Row: {
+          id: string;
+          number_workflows: number;
+          subscription: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          number_workflows?: number;
+          subscription?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          number_workflows?: number;
+          subscription?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       fup_stages: {
         Row: {
           id: string;
@@ -263,7 +286,6 @@ export interface Database {
           telefone?: string;
           email: string;
           whatsapp?: string;
-          assinatura?: boolean;
           consumo?: number;
           franquia?: number;
           prompt?: string;
@@ -276,7 +298,6 @@ export interface Database {
           telefone?: string;
           email: string;
           whatsapp?: string;
-          assinatura?: boolean;
           consumo?: number;
           franquia?: number;
           prompt?: string;
@@ -289,7 +310,6 @@ export interface Database {
           telefone?: string;
           email?: string;
           whatsapp?: string;
-          assinatura?: boolean;
           consumo?: number;
           franquia?: number;
           prompt?: string;
