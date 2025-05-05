@@ -288,7 +288,7 @@ const PainelControle: React.FC = () => {
                 No plano grátis você só pode ter até 3 workflows. Assine o plano pago para ter workflows ilimitados.
               </p>
               <a 
-                href="https://www.asaas.com/c/igke3ggpqfuou12d" 
+                href="https://site.botvance.com.br/" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-blue-400 hover:text-blue-300 underline"
