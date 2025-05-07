@@ -896,28 +896,28 @@ const [form, setForm] = useState<AgentForm>({
                 Configuração da Evolution API
               </button>
             </div>
-            <h3 className="text-xl font-semibold mb-4">Copie a URL do Webhook e cole na sua Evolution API</h3>
-            {id && id !== 'new' && (
-                <div>
-                  <div className="mb-6 relative">
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(`https://webhooks.botvance.com.br/webhook/conector?q=${id}`);
-                      }}
-                      className="absolute -top-6 right-0 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-xs px-3 py-1 rounded-t-md z-10"
-                      title="Copiar URL"
-                      style={{ cursor: 'pointer' }}
-                    >
-                      COPIAR
-                    </button>
-                    <div
-                      className="bg-[#232a3b] text-[#3b82f6] px-4 py-2 rounded font-mono text-sm select-all w-full"
-                      style={{ wordBreak: 'break-all' }}
-                    >
-                      {`https://webhooks.botvance.com.br/webhook/conector?q=${id}`}
-                    </div>
-                  </div>
-                  <div className="bg-[#232a3b] border border-[#374151] rounded-lg p-5 mb-6">
+      <h3 className="text-xl font-semibold mb-4">Copie a URL do Webhook e cole na sua Evolution API</h3>
+      {id && id !== 'new' ? (
+          <div>
+            <div className="mb-6 relative">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`https://webhooks.botvance.com.br/webhook/conector?q=${id}`);
+                }}
+                className="absolute -top-6 right-0 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-xs px-3 py-1 rounded-t-md z-10"
+                title="Copiar URL"
+                style={{ cursor: 'pointer' }}
+              >
+                COPIAR
+              </button>
+              <div
+                className="bg-[#232a3b] text-[#3b82f6] px-4 py-2 rounded font-mono text-sm select-all w-full"
+                style={{ wordBreak: 'break-all' }}
+              >
+                {`https://webhooks.botvance.com.br/webhook/conector?q=${id}`}
+              </div>
+            </div>
+            <div className="bg-[#232a3b] border border-[#374151] rounded-lg p-5 mb-6">
                     <div className="flex items-center mb-2">
                       <span className="text-xl mr-2">🔧</span>
                       <span className="font-bold text-lg text-white">Como configurar a Evolution API</span>
@@ -957,9 +957,63 @@ const [form, setForm] = useState<AgentForm>({
                         </ul>
                       </li>
                     </ol>
-                  </div>
-                </div>
-            )}
+            </div>
+          </div>
+      ) : (
+          <div>
+            <div className="bg-yellow-900/30 border border-yellow-600 text-yellow-200 rounded-lg p-6 mb-6">
+              <div className="flex items-center mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <strong>É necessário salvar o agente primeiro</strong>
+              </div>
+              <p>Para obter a URL do Webhook, você precisa primeiro salvar o agente. Preencha as informações básicas no Passo 1, clique em "Próximo" e depois em "Salvar Alterações" ou "Finalizar".</p>
+              <p className="mt-2">Após salvar, retorne a este passo para visualizar a URL do Webhook.</p>
+            </div>
+            <div className="bg-[#232a3b] border border-[#374151] rounded-lg p-5 mb-6">
+              <div className="flex items-center mb-2">
+                <span className="text-xl mr-2">🔧</span>
+                <span className="font-bold text-lg text-white">Como configurar a Evolution API</span>
+              </div>
+              <ol className="list-decimal list-inside text-gray-300 space-y-1 pl-2">
+                <li><b>Adicionar nova instância</b>
+                  <ul className="list-disc list-inside ml-5">
+                    <li>Clique em <b>Instance+</b></li>
+                    <li>Escolha um nome para a instância (evite espaços)</li>
+                    <li>No campo <b>Canal</b>, selecione <b>Baileys</b></li>
+                    <li>Mantenha o Token gerado automaticamente</li>
+                    <li>Digite o número de telefone no formato: <b>DDI + DDD + número</b> (ex: 5521999999999)</li>
+                    <li>Clique em <b>Get QR Code</b> para gerar o QR Code de conexão</li>
+                  </ul>
+                </li>
+                <li><b>Conectar o WhatsApp</b>
+                  <ul className="list-disc list-inside ml-5">
+                    <li>No seu celular, abra o WhatsApp</li>
+                    <li>Toque nos três pontinhos no topo e selecione <b>Dispositivos conectados</b></li>
+                    <li>Toque em <b>Conectar dispositivo</b> e escaneie o QR Code exibido na tela</li>
+                  </ul>
+                </li>
+                <li><b>Ajustar configurações</b>
+                  <ul className="list-disc list-inside ml-5">
+                    <li>Após conectar, acesse o menu <b>Settings</b></li>
+                    <li>Ative a opção <b>Ignore Groups</b> e clique em Salvar</li>
+                  </ul>
+                </li>
+                <li><b>Ativar Webhook</b>
+                    <ul className="list-disc list-inside ml-5">
+                      <li>Vá até o menu <b>Events</b> &gt; <b>Webhook</b></li>
+                      <li>Ative a opção <b>Enabled</b></li>
+                    <li>No campo URL, cole o link de webhook fornecido pela sua aplicação</li>
+                    <li>Ative a opção <b>Webhook Base64</b></li>
+                    <li>Ative também o evento <b>MESSAGES_UPSERT</b></li>
+                    <li>Clique em Salvar para finalizar</li>
+                  </ul>
+                </li>
+              </ol>
+            </div>
+          </div>
+      )}
           </div>
         );
       case 3:
